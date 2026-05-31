@@ -1,0 +1,6 @@
+{
+    "ignore": [
+        "sessao_bot/*",
+        "dados_salvos.txt"
+    ]
+}
