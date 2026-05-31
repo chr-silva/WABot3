@@ -1,22 +1,14 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import fs from 'fs'; 
-import http from 'http';
+import { iniciarPainel } from './server/painel.js'; // 🌍 Importa o painel modularizado
 
 const NUMERO_DONO = '5591988746023'; 
-const PORT = process.env.PORT || 3000;
-    http.createServer((req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('Bot Online!');
-    }).listen(PORT, () => {
-        console.log(`🌍 Servidor de validação rodando na porta ${PORT}`);
-    });
 
-// 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens recebidas
+// 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens
 const cacheMensagens = new Map();
 
 async function conectarBot() {
-
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
 
     const sock = makeWASocket({
@@ -24,6 +16,9 @@ async function conectarBot() {
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false
     });
+
+    // 🌍 Inicializa o servidor web de validação/painel de forma limpa e isolada
+    iniciarPainel(NUMERO_DONO);
 
     // 🔑 --- LÓGICA DO CÓDIGO DE PAREAMENTO ---
     if (!sock.authState.creds.registered) {
@@ -44,7 +39,6 @@ async function conectarBot() {
         const reac = reactions[0];
         if (!reac || !reac.reaction) return;
 
-        // 🔒 Segurança: Garante que a reação veio de você
         if (!reac.reaction.key.fromMe) return;
 
         const emojiGatilho = '💾';
@@ -53,7 +47,6 @@ async function conectarBot() {
             const chatRemetente = reac.key.remoteJid;
             const idMensagemReagida = reac.key.id;
 
-            // Busca o texto direto no nosso cache local pelo ID da mensagem
             const textoReagido = cacheMensagens.get(idMensagemReagida);
 
             if (textoReagido) {
@@ -61,7 +54,6 @@ async function conectarBot() {
                     fs.writeFileSync('dados_salvos.txt', textoReagido, 'utf8');
                     console.log("✅ Mensagem capturada via reação e salva localmente.");
 
-                    // Reage com check para confirmar o sucesso
                     await sock.sendMessage(chatRemetente, {
                         react: { text: '✅', key: reac.key }
                     });
@@ -69,10 +61,7 @@ async function conectarBot() {
                     console.error("Erro ao salvar arquivo de reação:", erro);
                 }
             } else {
-                sock.sendMessage(chatRemetente, {
-                    react: { text: '❌', key: reac.key }
-                });
-                console.log("⚠️ Mensagem não encontrada no cache local (muito antiga ou recebida antes do bot ligar).");
+                console.log("⚠️ Mensagem não encontrada no cache local (antiga ou recebida com bot off).");
             }
         }
     });
@@ -89,24 +78,20 @@ async function conectarBot() {
         const deMim = msg.key.fromMe;
         const idMensagem = msg.key.id;
 
-        // 🧠 Alimenta o cache com toda mensagem de texto que passa pelo bot
         if (texto) {
             cacheMensagens.set(idMensagem, texto);
-            
-            // Limpa mensagens antigas do cache para não estourar a memória do celular (mantém as últimas 100)
             if (cacheMensagens.size > 100) {
                 const primeiraChave = cacheMensagens.keys().next().value;
                 cacheMensagens.delete(primeiraChave);
             }
         }
 
-        // 🔒 Segurança: Só responde aos comandos se a mensagem veio de você
         if (!deMim) return;
 
         if (texto.startsWith('.')) {
             const comando = texto.slice(1).trim().toLowerCase();
 
-            // 💾 Comando .s (respondendo a uma mensagem manualmente)
+            // 💾 Comando .s
             if (comando === 's') {
                 const mensagemCitadaInfo = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
 
@@ -124,14 +109,13 @@ async function conectarBot() {
 
                 try {
                     fs.writeFileSync('dados_salvos.txt', textoCitado, 'utf8');
-                    console.log("✅ Mensagem capturada e salva localmente com sucesso.");
+                    console.log("✅ Mensagem capturada e salva com sucesso.");
                 } catch (erro) {
                     console.error("Erro ao salvar arquivo:", erro);
-                    await sock.sendMessage(remetente, { text: '❌ Erro interno ao tentar gravar o arquivo localmente.' });
                 }
             }
 
-            // 📤 Comando .l (recupera o que está gravado no arquivo)
+            // 📤 Comando .l
             if (comando === 'l') {
                 if (!fs.existsSync('dados_salvos.txt')) {
                     console.log("📂 Nenhum dado foi salvo ainda!");
