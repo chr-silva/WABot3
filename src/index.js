@@ -3,7 +3,7 @@ import pino from 'pino';
 import fs from 'fs'; 
 import { iniciarPainel } from './server/painel.js'; // 🌍 Importa o painel modularizado
 
-const NUMERO_DONO = '5591988746023'; 
+const NUMERO_DONO = '559188746023'; 
 
 // 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens
 const cacheMensagens = new Map();
