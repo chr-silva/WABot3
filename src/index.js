@@ -24,14 +24,16 @@ async function conectarBot() {
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
-                const codigo = await sock.requestPairingCode(NUMERO_DONO);
+
+                const numeroLimpo = NUMERO_DONO.replace(/[^0-9]/g, '');
+                const codigo = await sock.requestPairingCode(numeroLimpo);
                 console.log(`\n========================================`);
                 console.log(`📱 SEU CÓDIGO DE PAREAMENTO: ${codigo}`);
                 console.log(`========================================\n`);
             } catch (err) {
                 console.error("Erro ao gerar código de pareamento:", err);
             }
-        }, 3000);
+        }, 8000);
     }
 
     // --- 👀 OUVINTE DE REAÇÕES (Invisível e Seguro) ---
