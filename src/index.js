@@ -1,22 +1,21 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import fs from 'fs'; 
+import http from 'http';
 
 const NUMERO_DONO = '5591988746023'; 
-
-// 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens recebidas
-const cacheMensagens = new Map();
-
-async function conectarBot() {
-
-    import http from 'http';
-    const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
     http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('Bot Online!');
     }).listen(PORT, () => {
         console.log(`🌍 Servidor de validação rodando na porta ${PORT}`);
     });
+
+// 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens recebidas
+const cacheMensagens = new Map();
+
+async function conectarBot() {
 
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
 
