@@ -8,6 +8,16 @@ const NUMERO_DONO = '5591988746023';
 const cacheMensagens = new Map();
 
 async function conectarBot() {
+
+    import http from 'http';
+    const PORT = process.env.PORT || 3000;
+    http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Bot Online!');
+    }).listen(PORT, () => {
+        console.log(`🌍 Servidor de validação rodando na porta ${PORT}`);
+    });
+
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
 
     const sock = makeWASocket({
