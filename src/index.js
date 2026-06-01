@@ -12,7 +12,7 @@ const cacheMensagens = new Map();
 async function conectarBot() {
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
 
-    const sock = makeWASocket.default({
+    const sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false
