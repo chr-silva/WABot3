@@ -3,7 +3,8 @@ import pino from 'pino';
 import fs from 'fs'; 
 import { iniciarPainel } from './server/painel.js'; // 🌍 Importa o painel modularizado
 
-const NUMERO_DONO = '559188746023'; 
+// Volta o número original com o 9º dígito como estava antes
+const NUMERO_DONO = '5591988746023'; 
 
 // 🧠 Cache na memória para guardar temporariamente o texto das últimas mensagens
 const cacheMensagens = new Map();
@@ -11,20 +12,16 @@ const cacheMensagens = new Map();
 async function conectarBot() {
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
 
-    const sock = makeWASocket({
+    const sock = makeWASocket.default({
         auth: state,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false
     });
 
-    // 🌍 Inicializa o servidor web de validação/painel de forma limpa e isolada
-    iniciarPainel(NUMERO_DONO);
-
     // 🔑 --- LÓGICA DO CÓDIGO DE PAREAMENTO ---
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
-
                 const numeroLimpo = NUMERO_DONO.replace(/[^0-9]/g, '');
                 const codigo = await sock.requestPairingCode(numeroLimpo);
                 console.log(`\n========================================`);
@@ -33,7 +30,7 @@ async function conectarBot() {
             } catch (err) {
                 console.error("Erro ao gerar código de pareamento:", err);
             }
-        }, 8000);
+        }, 5000); // 5 segundos está ótimo para estabilizar
     }
 
     // --- 👀 OUVINTE DE REAÇÕES (Invisível e Seguro) ---
@@ -153,4 +150,8 @@ async function conectarBot() {
     sock.ev.on('creds.update', saveCreds);
 }
 
+// 🌍 ATENÇÃO: O painel agora liga aqui fora, UMA ÚNICA VEZ, evitando o erro de porta ocupada
+iniciarPainel(NUMERO_DONO);
+
+// Liga o bot de forma independente
 conectarBot();
