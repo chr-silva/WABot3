@@ -1,0 +1,28 @@
+{
+  "1": [ 
+    { "materia": "Redes de Computadores", "inicio": "13:00", "fim": "14:40" },
+    { "materia": "Geografia", "inicio": "14:40", "fim": "16:40" },
+    { "materia": "Química", "inicio": "16:40", "fim": "18:20"}
+  ],
+  "2": [
+    { "materia": "LPOO", "inicio": "09:50", "fim": "12:20" },
+    { "materia": "Inglês", "inicio": "13:00", "fim": "14:40" },
+    { "materia": "Biologia", "inicio": "14:40", "fim": "16:40" },
+    { "materia": "Física", "inicio": "16:40", "fim": "18:20"}
+  ],
+  "3": [
+    { "materia": "Filosofia", "inicio": "13:00", "fim": "14:40" },
+    { "materia": "Matemática", "inicio": "14:40", "fim": "16:40" },
+    { "materia": "Artes", "inicio": "16:40", "fim": "18:20"}
+  ],
+  "4": [
+    { "materia": "Sociologia", "inicio": "13:00", "fim": "14:40" },
+    { "materia": "ADS", "inicio": "14:40", "fim": "16:40" },
+    { "materia": "Estrutura de Dados", "inicio": "16:40", "fim": "18:20"}
+  ],
+  "5": [
+    { "materia": "Banco de Dados", "inicio": "09:50", "fim": "12:20" },    
+    { "materia": "Português", "inicio": "13:00", "fim": "14:40" },
+    { "materia": "História", "inicio": "14:40", "fim": "16:40" }
+  ]
+}
