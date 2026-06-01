@@ -7,9 +7,6 @@ import fs from 'fs';
 import {
     iniciarPainel
 } from './server/painel.js'; // 🌍 Importa o painel modularizado
-import {
-    startsWith
-} from 'firebase/firestore/pipelines';
 
 // Volta o número original com o 9º dígito como estava antes
 const NUMERO_DONO = '5591988746023';
