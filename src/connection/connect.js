@@ -2,6 +2,10 @@ import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeys
 import pino from 'pino';
 import { msgHandler } from '../handlers/msgHandler.js';
 import { reactionHandler } from '../handlers/reactionHandler.js';
+import { iniciarPainel } from '../server/painel.js';
+import { iniciarWatchdogDeDisparos } from '../server/whatsappControl.js';
+
+let painelJaIniciado = false;
 
 export async function conectarBot(numeroDono) {
     const { state, saveCreds } = await useMultiFileAuthState('sessao_bot');
@@ -39,6 +43,14 @@ export async function conectarBot(numeroDono) {
             if (deveReconectar) conectarBot(numeroDono);
         } else if (connection === 'open') {
             console.log('✅ Bot conectado com sucesso!');
+            if (!painelJaIniciado) {
+                iniciarPainel(numeroDono, sock);
+                iniciarWatchdogDeDisparos(sock);
+                painelJaIniciado = true; // Ativa a trava
+                console.log('🌐 Painel administrativo e monitor de disparos iniciados.');
+            } else {
+                console.log('🌐 Bot reconectado. Mantendo o painel HTTP na porta atual.');
+            }
         }
     });
 
