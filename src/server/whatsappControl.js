@@ -5,12 +5,11 @@ const cooldowns = new Map();
 
 /**
  * Puxa os grupos da memória do bot com filtros de segurança e performance
- * @param {Object} sock - A instância de conexão do seu bot (Baileys)
+ * @param {Object} sock - A instância de conexão do bot (Baileys)
  * @param {Number} pagina - Página atual da paginação
  * @param {Number} limite - Quantidade de grupos por lote
  */
 export function obterGruposPaginados(sock, pagina = 1, limite = 15) {
-    // 📝 Altere os IDs e Nomes abaixo com os grupos que você quer que apareçam no Painel!
     const meusGruposManuais = [
         { id:  "120363408047968278@g.us", nome: "🛠️ Grupo de Testes do Bot" },
         // { id: "@g.us", nome: "📢 Mural de Avisos - Geral" },
@@ -31,7 +30,7 @@ export function obterGruposPaginados(sock, pagina = 1, limite = 15) {
 }
 /**
  * Escuta o arquivo disparo.json para enviar mensagens em segundo plano com Rate Limiting
- * @param {Object} sock - A instância de conexão do seu bot
+ * @param {Object} sock - A instância de conexão do bot
  */
 export function iniciarWatchdogDeDisparos(sock) {
     const caminhoDisparo = './disparo.json';
