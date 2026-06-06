@@ -1,3 +1,4 @@
+.env
 sessao_bot/
 node_modules/
 dados_salvos.txt
