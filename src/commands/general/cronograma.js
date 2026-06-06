@@ -81,7 +81,7 @@ export default async function(sock, msg, comando, remetente) {
         if (temAvisos) {
             mensagemSemana += blocoAvisos;
         } else {
-            mensagemSemana += `\n💡 _Dica: Use "💡 matéria: aviso" para prender um lembrete aqui._`;
+            mensagemSemana += `\n💡 _Dica: Use "💡 matéria: aviso" para fixar um aviso aqui._`;
         }
 
         // 6. 🔥 O ÚNICO ENVIO DE TEXTO DO ARQUIVO INTEIRO:
