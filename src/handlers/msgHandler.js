@@ -1,6 +1,7 @@
 import { cacheMensagens } from './reactionHandler.js';
 import path from 'path';
 
+
 // 🛡️ Travas de segurança e controle de fluxo
 const idsProcessados = new Set();
 const comandosRecentes = new Map();
@@ -15,6 +16,7 @@ const MAPA_COMANDOS = {
     '🚫✅': 'general/restaurarAula.js',
     '💡❌': 'admin/limpar_aviso.js',
 };
+
 
 // Gerencia o cache local das últimas 100 mensagens
 function gerenciarCacheMensagem(id, texto) {
@@ -35,10 +37,16 @@ function obterNomeComando(texto) {
 }
 
 export async function msgHandler(sock, { messages, type }) {
-    if (type !== 'notify' || !messages?.[0]?.message) return;
-
     const msg = messages[0];
+    if (type !== 'notify' || !messages?.[0]?.message) return;
+    if (!msg || !msg.message) return;
     const { protocolMessage, senderKeyDistributionMessage } = msg.message;
+    
+    // const idDoChat = msg.key?.remoteJid;
+    // if (idDoChat && idDoChat.endsWith('@g.us')) {
+    //     console.log(`📋 [ID DO GRUPO]: ${idDoChat} | Remetente: ${msg.pushName || 'Desconhecido'}`);
+    // }
+
     
     // Filtros de segurança contra pacotes fantasmas
     if (protocolMessage || senderKeyDistributionMessage || msg.labels?.length > 0) return;
