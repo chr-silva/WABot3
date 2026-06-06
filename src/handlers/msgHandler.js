@@ -51,23 +51,23 @@ export async function msgHandler(sock, { messages, type }) {
     // Filtros de segurança contra pacotes fantasmas
     if (protocolMessage || senderKeyDistributionMessage || msg.labels?.length > 0) return;
 
-    const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
+const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
     const { remoteJid: remetente, fromMe: deMim, id: idMensagem } = msg.key;
 
-    gerenciarCacheMensagem(idMensagem, texto);
+    
+    if (!deMim || !texto) return;
 
-    // Validações iniciais (Self-bot e duplicidade do Baileys)
-    if (!deMim || idsProcessados.has(idMensagem) || !texto) return;
+    gerenciarCacheMensagem(idMensagem, texto);
 
     const comandoNome = obterNomeComando(texto);
     if (!comandoNome) return;
 
-    // Controle de Anti-flood (Duplicidade extrema)
+    if (idsProcessados.has(idMensagem)) return;
+
     const chaveComando = `${remetente}_${texto}`;
     const agora = Date.now();
-    if (comandosRecentes.has(chaveComando) && (agora - comandosRecentes.get(chaveComando) < 3000)) return;
+    if (comandosRecentes.has(chaveComando) && (agora - comandosRecentes.get(chaveComando) < 1500)) return; // Reduzido para 1.5s para maior agilidade
 
-    // Ativa as travas de segurança
     idsProcessados.add(idMensagem);
     comandosRecentes.set(chaveComando, agora);
 
@@ -82,6 +82,6 @@ export async function msgHandler(sock, { messages, type }) {
         setTimeout(() => {
             idsProcessados.delete(idMensagem);
             comandosRecentes.delete(chaveComando);
-        }, 10000);
+        }, 5000); // 5 segundos é o suficiente para limpar o cache de flood
     }
 }
