@@ -10,13 +10,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
+function lerJsonRequisicao(req) {
+    return new Promise((resolve, reject) => {
+        let corpo = '';
+        req.on('data', chunk => { corpo += chunk; });
+        req.on('end', () => {
+            try {
+                resolve(corpo ? JSON.parse(corpo) : {});
+            } catch (erro) {
+                reject(new Error('JSON Inválido'));
+            }
+        });
+    });
+}
 
 // 🛠️ Função para ler os comandos do projeto automaticamente
 function lerComandosDoProjeto() {
-    const categorias = ['admin', 'general', 'utils'];
+    const categories = ['admin', 'general', 'utils'];
     const resultado = {};
 
-    categorias.forEach(cat => {
+    categories.forEach(cat => {
         const caminhoDir = path.resolve('src', 'commands', cat);
         if (fs.existsSync(caminhoDir)) {
             resultado[cat] = fs.readdirSync(caminhoDir).filter(file => file.endsWith('.js'));
@@ -45,8 +58,49 @@ export function iniciarPainel(numeroDono, sock) {
     const SENHA_MESTRA = process.env.PAINEL_SENHA || 'admin';
     const TOKEN_SECRETO = process.env.PAINEL_TOKEN_SECRETO || 'sessao_valida_dsbot';
 
-    createServer((req, res) => {
+    createServer(async (req, res) => { // 🎯 Adicionado async para usar await na leitura do JSON da API
         const minhaUrl = new URL(req.url, `http://${req.headers.host}`);
+        
+        // -------------------------------------------------------------
+        // 📱 🔐 ROTAS DA API REST (EXCLUSIVAS PARA O APP FLUTTER)
+        // Colocadas antes da verificação de sessão para não conflitar com o cookie web
+        // -------------------------------------------------------------
+        
+        // Login do Aplicativo
+        if (minhaUrl.pathname === '/api/login' && req.method === 'POST') {
+            try {
+                const { senha } = await lerJsonRequisicao(req);
+                if (senha === SENHA_MESTRA) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ sucesso: true, mensagem: 'Conectado com sucesso!' }));
+                } else {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ sucesso: false, mensagem: 'Senha mestra incorreta.' }));
+                }
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ sucesso: false, mensagem: 'JSON Inválido enviado pelo app.' }));
+            }
+        }
+
+        // Teste de Status do Bot via API
+        if (minhaUrl.pathname === '/api/status' && req.method === 'GET') {
+            const comandos = lerComandosDoProjeto();
+            const totalComandos = comandos.admin.length + comandos.general.length + comandos.utils.length;
+            
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                botStatus: "ONLINE",
+                memoriaUsada: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB',`,
+                tempoAtivo: `${Math.floor(process.uptime() / 60)} min`,
+                totalComandos: totalComandos
+            }));
+        }
+
+
+        // -------------------------------------------------------------
+        // 🌐 FLUXO ANTIGO DO PAINEL WEB (HTML / COOKIES)
+        // -------------------------------------------------------------
         const tokenUsuario = obterCookie(req, 'ds_session');
         const estaAutenticado = tokenUsuario === TOKEN_SECRETO;
 
@@ -63,11 +117,7 @@ export function iniciarPainel(numeroDono, sock) {
             }
         }
 
-        // -------------------------------------------------------------
-        // 🔓 ROTAS PÚBLICAS (LOGIN)
-        // -------------------------------------------------------------
-
-        // Processar o formulário de Login
+        // Processar o formulário de Login Web
         if (minhaUrl.pathname === '/login' && req.method === 'POST') {
             let corpo = '';
             req.on('data', chunk => { corpo += chunk.toString(); });
@@ -76,14 +126,12 @@ export function iniciarPainel(numeroDono, sock) {
                 const senhaDigitada = params.get('senha');
 
                 if (senhaDigitada === SENHA_MESTRA) {
-                    // Login correto: Define cookie seguro HttpOnly e SameSite=Strict
                     res.writeHead(302, {
                         'Set-Cookie': `ds_session=${TOKEN_SECRETO}; Path=/; HttpOnly; SameSite=Strict`,
                         'Location': '/'
                     });
                     return res.end();
                 } else {
-                    // Senha errada
                     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                     return res.end(gerarHtmlLogin('Senha incorreta! Tente novamente.'));
                 }
@@ -91,15 +139,11 @@ export function iniciarPainel(numeroDono, sock) {
             return;
         }
 
-        // Se não estiver autenticado e tentar qualquer outra rota, barra e mostra login
+        // Se não estiver autenticado na Web e tentar qualquer outra rota web, barra e mostra login
         if (!estaAutenticado) {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             return res.end(gerarHtmlLogin());
         }
-
-        // -------------------------------------------------------------
-        // 🛡️ ROTAS PROTEGIDAS (Só acessadas se estiver logado)
-        // -------------------------------------------------------------
 
         // 🚪 Ação: Fazer Logout
         if (minhaUrl.pathname === '/logout' && req.method === 'POST') {
@@ -194,7 +238,7 @@ export function iniciarPainel(numeroDono, sock) {
                 const grupoId = params.get('grupoId');
                 const mensagem = params.get('mensagem')?.trim();
 
-                if (grupoId && mensagem) {
+                if (grupoId && message) {
                     const dadosDisparo = { grupoId, mensagem, timestamp: Date.now() };
                     fs.writeFileSync('disparo.json', JSON.stringify(dadosDisparo, null, 2), 'utf8');
                 }
@@ -204,7 +248,7 @@ export function iniciarPainel(numeroDono, sock) {
             return;
         }
 
-        // 📄 Página Principal do Painel
+        // 📄 Página Principal do Painel Web
         if (minhaUrl.pathname === '/') {
             let textoSalvo = "📂 Nenhum dado salvo ainda.";
             if (fs.existsSync('dados_salvos.txt')) {
@@ -238,10 +282,9 @@ export function iniciarPainel(numeroDono, sock) {
             const comandos = lerComandosDoProjeto();
             const totalComandos = comandos.admin.length + comandos.general.length + comandos.utils.length;
 
-            // 🔄 Paginação temporária para testes na Interface
             const paginaAtual = parseInt(minhaUrl.searchParams.get('pg')) || 1;
             const gruposReais = obterGruposPaginados(sock, paginaAtual, 15);
-            // Renderiza injetando os dados lidos nas funções do interface.js
+
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             return res.end(gerarHtmlPainel({
                 numeroDono,
@@ -250,7 +293,7 @@ export function iniciarPainel(numeroDono, sock) {
                 materiasDisponiveis,
                 listaCanceladas,
                 textoSalvo,
-                grupos: gruposReais, // Mudar para a função do whatsappControl depois
+                grupos: gruposReais,
                 paginaAtual
             }));
         }
@@ -259,6 +302,6 @@ export function iniciarPainel(numeroDono, sock) {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404 Not Found');
     }).listen(PORT, () => {
-        console.log(`🌍 Painel administrativo protegido rodando na porta ${PORT}`);
+        console.log(`🌍 Painel e API REST rodando juntos de forma segura na porta ${PORT}`);
     });
 }
